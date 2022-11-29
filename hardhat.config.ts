@@ -1,13 +1,12 @@
-import '@nomiclabs/hardhat-etherscan';
-import '@nomiclabs/hardhat-waffle';
-import '@typechain/hardhat';
+import 'hardhat-typechain'
+import '@nomiclabs/hardhat-ethers'
+import '@nomiclabs/hardhat-waffle'
+import '@nomiclabs/hardhat-etherscan'
 import * as bip39 from 'bip39';
 import chalk from 'chalk';
 import * as dotenv from 'dotenv';
 import 'hardhat-abi-exporter';
-import 'hardhat-gas-reporter';
 import { HardhatUserConfig, task } from 'hardhat/config';
-import 'solidity-coverage';
 
 dotenv.config();
 
@@ -34,9 +33,22 @@ task('mnemonic', 'Generate a random mnemonic (uses crypto.randomBytes under the 
 const config: HardhatUserConfig = {
   solidity: {
     version: '0.7.6',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 800,
+      },
+      metadata: {
+        // do not include the metadata hash, since this is machine dependent
+        // and we want all generated code to be deterministic
+        // https://docs.soliditylang.org/en/v0.7.6/metadata.html
+        bytecodeHash: 'none',
+      },
+    },
   },
   networks: {
     hardhat: {
+      allowUnlimitedContractSize: false,
       loggingEnabled: true,
       accounts:
         process.env.HARDHAT_PRIVATE_KEY !== undefined
@@ -52,17 +64,11 @@ const config: HardhatUserConfig = {
     goerli: {
       url: process.env.GOERLI_URL,
       accounts: process.env.GOERLI_PRIVATE_KEY !== undefined ? [process.env.GOERLI_PRIVATE_KEY] : [],
-      gasPrice: 3_000_000_000,
+      // gasPrice: 3_000_000_000,
     },
-  },
-  gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
-    currency: 'USD',
   },
   etherscan: {
-    apiKey: {
-      goerli: process.env.ETHERSCAN_API_KEY ?? '',
-    },
+    apiKey: process.env.ETHERSCAN_API_KEY ?? '',
   },
   abiExporter: {
     path: './abi',

@@ -19,47 +19,47 @@ async function main() {
   }
   const deployConfig: DeployConfig = DEPLOY_CONFIG[network];
 
-  // Deploy Exchange contract
-  const exchangeSpinner = new Spinner(`Deploying ${deployConfig.exchangeContractName} contract... %s`);
-  exchangeSpinner.start();
-  let exchange;
+  // Deploy Uniswap Factory contract
+  const factorySpinner = new Spinner(`Deploying UniswapV3Factory contract... %s`);
+  factorySpinner.start();
+  let factory;
   try {
-    const Exchange = await hre.ethers.getContractFactory(deployConfig.exchangeContractName);
-    exchange = await Exchange.deploy(deployConfig.exchangeRouter);
-    await exchange.deployed();
+    const Factory = await hre.ethers.getContractFactory('UniswapV3Factory');
+    factory = await Factory.deploy();
+    await factory.deployed();
 
-    exchangeSpinner.stop(true);
-    console.log(`${deployConfig.exchangeContractName} deployed to:`, chalk.green(exchange.address));
+    factorySpinner.stop(true);
+    console.log(`UniswapV3Factory deployed to:`, chalk.green(factory.address));
   } catch (e) {
-    exchangeSpinner.stop(true);
+    factorySpinner.stop(true);
     throw e;
   }
 
-  // Deploy The Gas Station Contract
-  const gasStationSpinner = new Spinner('Deploying Gas Station contract... %s');
-  gasStationSpinner.start();
-  let gasStation;
+  // Deploy Uniswap router Contract
+  const swapRouterSpinner = new Spinner('Deploying Swap Router contract... %s');
+  swapRouterSpinner.start();
+  let swapRouter;
   try {
-    const GasStation = await hre.ethers.getContractFactory('GasStation');
-    gasStation = await GasStation.deploy(exchange.address, deployConfig.approver, deployConfig.feePayer, deployConfig.txRelayFee, deployConfig.feeTokens);
-    await gasStation.deployed();
+    const SwapRouter = await hre.ethers.getContractFactory('SwapRouter');
+    swapRouter = await SwapRouter.deploy(factory.address, deployConfig.weth);
+    await swapRouter.deployed();
 
-    gasStationSpinner.stop(true);
-    console.log(`Gas Station deployed to:`, chalk.green(gasStation.address));
+    swapRouterSpinner.stop(true);
+    console.log(`Swap Router deployed to:`, chalk.green(swapRouter.address));
   } catch (e) {
-    gasStationSpinner.stop(true);
+    swapRouterSpinner.stop(true);
     throw e;
   }
 
   // To save deploy info
   const deployInfo = [
     {
-      address: exchange.address,
-      args: [deployConfig.exchangeRouter],
+      address: factory.address,
+      args: [],
     },
     {
-      address: gasStation.address,
-      args: [exchange.address, deployConfig.approver, deployConfig.feePayer, deployConfig.txRelayFee, deployConfig.feeTokens],
+      address: swapRouter.address,
+      args: [factory.address, deployConfig.weth],
     },
   ];
   const deployInfoDir = path.resolve(hre.config.paths.root, 'deploy-info');
